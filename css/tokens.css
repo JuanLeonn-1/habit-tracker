@@ -77,6 +77,45 @@
   --name-col: 168px;
 }
 
+/* Per-profile theme.
+   Every component reads from the tokens above, so a whole different look is
+   just an override block — no component CSS and no JS beyond setting the
+   attribute on <html>. Swap any value here to retheme a profile. */
+
+[data-profile='leon'] {
+  --paper: #f2f3ef;
+  --paper-raised: #fafbf7;
+  --paper-sunken: #e7e9e2;
+
+  --ink: #3f4a48;
+  --ink-soft: #6f7d79;
+  --ink-faint: #a3aeaa;
+
+  --rule: #dcdfd8;
+  --rule-strong: #bfc4bb;
+
+  /* Bronze instead of gold — same metallic idea, cooler. */
+  --gold: #8a7a52;
+  --gold-soft: #cfc5a6;
+
+  --today: #dde3d8;
+
+  /* Muted earth and slate tones rather than candy pastels. Same lightness
+     range so the dark ink keeps its contrast on every row. */
+  --c0:  #c2d0bc;  /* moss */
+  --c1:  #c3cdd6;  /* slate */
+  --c2:  #b9c6d8;  /* denim */
+  --c3:  #e0d6be;  /* sand */
+  --c4:  #dcc4b8;  /* clay */
+  --c5:  #cfd4b4;  /* olive */
+  --c6:  #e0c0ae;  /* terracotta */
+  --c7:  #c4cbd2;  /* steel */
+  --c8:  #d3bfbd;  /* dust */
+  --c9:  #b6cdca;  /* teal */
+  --c10: #d0ccc4;  /* stone */
+  --c11: #e2d2b0;  /* ochre */
+}
+
 * { box-sizing: border-box; }
 
 html, body {

@@ -2,17 +2,19 @@
    Profile resolution happens here and only here — everything downstream is
    plain single-user code. */
 
-import { getActiveId, setActiveId, profileById, stateKey } from './profiles.js';
+import { getActiveId, setActiveId, clearActive, profileById, stateKey } from './profiles.js';
 import { createLocalAdapter } from './storage/local.js';
 import { createStore } from './store.js';
 import { seedFor } from './seed.js';
 import { renderProfilePicker } from './views/profile.js';
 import { renderToday } from './views/today.js';
+import { renderMonth } from './views/grid.js';
 
 const root = document.getElementById('app');
 
 const ROUTES = {
   '#/today': { label: 'Today', render: renderToday },
+  '#/month': { label: 'Month', render: renderMonth },
 };
 
 boot();
@@ -21,12 +23,17 @@ async function boot() {
   const profileId = getActiveId();
 
   if (!profileId) {
+    delete document.documentElement.dataset.profile;
     root.replaceChildren(renderProfilePicker(async (id) => {
       setActiveId(id);
       await boot();
     }));
     return;
   }
+
+  // The only line that themes the app. Every colour downstream is a token,
+  // so a profile theme is a CSS override block and nothing else.
+  document.documentElement.dataset.profile = profileId;
 
   const adapter = createLocalAdapter(stateKey(profileId));
   // First run for this profile seeds the starting habit list; every later run
@@ -50,11 +57,16 @@ function renderShell(profileId, store) {
   shell.innerHTML = `
     <header class="topbar">
       <h1 class="wordmark">Habit <span>Tracker</span></h1>
-      <p class="topbar__profile">${profileById(profileId).name}</p>
+      <button class="topbar__profile" title="Switch profile">${profileById(profileId).name}</button>
     </header>
     <nav class="tabs"></nav>
     <main class="main"></main>
   `;
+
+  shell.querySelector('.topbar__profile').addEventListener('click', () => {
+    clearActive();
+    boot();
+  });
 
   const tabs = shell.querySelector('.tabs');
   for (const [hash, route] of Object.entries(ROUTES)) {
@@ -76,5 +88,6 @@ function paint(shell, store) {
     tab.setAttribute('aria-current', String(tab.dataset.hash === hash));
   }
 
-  shell.querySelector('.main').replaceChildren(ROUTES[hash].render(store));
+  const repaint = () => paint(shell, store);
+  shell.querySelector('.main').replaceChildren(ROUTES[hash].render(store, repaint));
 }
