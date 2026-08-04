@@ -2,7 +2,7 @@
    Profile resolution happens here and only here — everything downstream is
    plain single-user code. */
 
-import { getActiveId, setActiveId, clearActive, profileById, stateKey } from './profiles.js';
+import { getActiveId, setActiveId, profileById, stateKey } from './profiles.js';
 import { createLocalAdapter } from './storage/local.js';
 import { createStore } from './store.js';
 import { seedFor } from './seed.js';
@@ -10,6 +10,7 @@ import { renderProfilePicker } from './views/profile.js';
 import { renderToday } from './views/today.js';
 import { renderMonth } from './views/grid.js';
 import { renderCalendar } from './views/calendar.js';
+import { renderSettings } from './views/settings.js';
 
 const root = document.getElementById('app');
 
@@ -17,6 +18,7 @@ const ROUTES = {
   '#/today': { label: 'Today', render: renderToday },
   '#/month': { label: 'Month', render: renderMonth },
   '#/calendar': { label: 'Calendar', render: renderCalendar },
+  '#/settings': { label: 'Settings', render: renderSettings },
 };
 
 // Keeps the phone's browser chrome in step with the profile's theme; a cream
@@ -77,9 +79,10 @@ function renderShell(profileId, store) {
     <main class="main"></main>
   `;
 
+  // Goes to Settings rather than switching straight away — tapping your own
+  // name and being signed out is a nasty surprise.
   shell.querySelector('.topbar__profile').addEventListener('click', () => {
-    clearActive();
-    boot();
+    location.hash = '#/settings';
   });
 
   const tabs = shell.querySelector('.tabs');
@@ -104,4 +107,12 @@ function paint(shell, store) {
 
   const repaint = () => paint(shell, store);
   shell.querySelector('.main').replaceChildren(ROUTES[hash].render(store, repaint));
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    // Failure is not fatal — the app runs fine without it, just without
+    // offline support.
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
 }

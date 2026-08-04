@@ -173,6 +173,19 @@ export function createStore({ adapter, state }) {
     deleteEvent(id) {
       store.updateEvent(id, { deletedAt: Date.now() });
     },
+
+    /* ---- whole-state swap, for restore and reset ---- */
+
+    /** Mutated in place rather than reassigned, so the closure and every
+        subscriber keep pointing at the same object. */
+    replaceState(next) {
+      commit(() => {
+        state.version = next.version ?? 1;
+        state.habits = next.habits ?? [];
+        state.entries = next.entries ?? {};
+        state.events = next.events ?? [];
+      });
+    },
   };
 
   return store;

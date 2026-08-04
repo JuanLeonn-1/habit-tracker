@@ -705,6 +705,67 @@ thead .grid__total {
 .swatches--compact { grid-column: 1 / -1; }
 .swatches--compact .swatch { width: 20px; height: 20px; }
 
+/* ---- settings ---- */
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+}
+
+.card--danger { border-color: color-mix(in srgb, var(--danger) 40%, var(--rule)); }
+
+.card__title {
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-heading);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: var(--sp-2);
+}
+
+.card__body {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--text-sm);
+}
+
+.card__stat {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+.card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.card__actions .btn { border: 1px solid var(--rule); }
+
+label.btn {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.card__note {
+  margin: var(--sp-3) 0 0;
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+  min-height: 1em;
+}
+
+.card__note[data-tone='error'] { color: var(--danger); }
+
 /* ---- phone ---- */
 
 @media (max-width: 520px) {
