@@ -45,7 +45,10 @@ export function seedFor(profileId) {
     version: 1,
     updatedAt: now,
     habits: rows.map(([name, type, icon, note], i) => ({
-      id: uid(),
+      // Deterministic, not random: two devices that seed the same profile
+      // independently must land on the same ids, or syncing would treat them
+      // as twenty different habits instead of ten.
+      id: `${profileId}-${i}`,
       name,
       type,
       icon,

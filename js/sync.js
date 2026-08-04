@@ -100,13 +100,34 @@ export function createSync({ store, profileId, onStatus }) {
     await client.verify();
 
     let id = gistId?.trim() || null;
-    if (id) assertSameProfile(await client.read(id));
-    else id = await client.create(store.getState(), profileId);
+
+    if (id) {
+      const remote = await client.read(id);
+      assertSameProfile(remote);
+
+      // A device joining an existing sync before it has been used has nothing
+      // worth keeping, so it adopts the remote outright. Merging instead would
+      // pair its untouched starting list against the real one and leave every
+      // habit sitting there twice.
+      if (isPristine(store.getState())) {
+        applying = true;
+        store.replaceState(remote);
+        applying = false;
+      }
+    } else {
+      id = await client.create(store.getState(), profileId);
+    }
 
     writeConfig({ token, gistId: id, lastSyncedAt: null });
     await syncNow();
     if (lastError) throw new Error(lastError);
     return id;
+  }
+
+  /** Never ticked a habit, never added a task — nothing here to lose. */
+  function isPristine(state) {
+    return Object.keys(state.entries).length === 0
+      && state.events.filter((e) => !e.deletedAt).length === 0;
   }
 
   function disconnect() {

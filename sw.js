@@ -5,7 +5,7 @@
 // Bump this on every deploy. The browser byte-compares this file, finds it
 // changed, installs the new worker and drops the old cache. Forget to bump it
 // and everyone keeps seeing the previous version indefinitely.
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE = `habit-tracker-${VERSION}`;
 
 const ASSETS = [
