@@ -1,0 +1,117 @@
+/* Design tokens — paper, ink, gold and the pastel row palette.
+   Direction taken from the two bullet-journal references: warm cream paper,
+   watercolour pastels, sparing gold. No pure black anywhere on purpose —
+   neither reference uses it, and it breaks the warmth on sight. */
+
+:root {
+  /* Paper */
+  --paper: #fbf7f0;
+  --paper-raised: #fffdf9;
+  --paper-sunken: #f4eee4;
+
+  /* Ink — warm brown-grey, never #000 */
+  --ink: #5a4a42;
+  --ink-soft: #8a7a70;
+  --ink-faint: #b6a89e;
+
+  /* Rules and edges */
+  --rule: #e3dad0;
+  --rule-strong: #cdc0b4;
+
+  /* Gold accent — section rules and the wordmark only. Accent, not UI colour. */
+  --gold: #c9a227;
+  --gold-soft: #e6d3a3;
+
+  /* State */
+  --today: #f0e2c8;
+  --danger: #b5675f;
+
+  /* Habit row palette — 12 pastels lifted from the planner reference.
+     Index into this list is what `habit.color` stores. */
+  --c0:  #c9e4d6;  /* mint */
+  --c1:  #dcd3ec;  /* lilac */
+  --c2:  #c9ddf0;  /* powder blue */
+  --c3:  #f6e7b4;  /* butter */
+  --c4:  #f6d2dc;  /* blush */
+  --c5:  #d7e6c6;  /* sage */
+  --c6:  #fad9c1;  /* peach */
+  --c7:  #cfd4f0;  /* periwinkle */
+  --c8:  #efc9d8;  /* rose */
+  --c9:  #c4e6e4;  /* aqua */
+  --c10: #e6d5ec;  /* lavender */
+  --c11: #f7e0c4;  /* apricot */
+
+  /* Type. Script is reserved for the wordmark; everything else is sans.
+     Small handwriting is unreadable on a phone, so data never uses it. */
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-script: "Segoe Script", "Bradley Hand", "Brush Script MT", cursive;
+
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+
+  /* Section headings imitate the reference's spaced serif caps with
+     letter-spacing instead of shipping a third font file. */
+  --tracking-heading: 0.18em;
+
+  /* Space */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-pill: 999px;
+
+  --shadow: 0 1px 2px rgba(90, 74, 66, 0.06), 0 4px 12px rgba(90, 74, 66, 0.05);
+
+  /* Grid cell sizing — one place, because the month grid depends on it
+     for the sticky name column offset. */
+  --cell: 26px;
+  --name-col: 168px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--paper);
+  /* Faint paper tooth, done with gradients so there is no image to ship
+     and nothing extra for the service worker to cache. */
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(201, 162, 39, 0.025) 0%, transparent 55%),
+    radial-gradient(circle at 80% 70%, rgba(220, 211, 236, 0.06) 0%, transparent 55%);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1, h2, h3 { margin: 0; font-weight: 600; }
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}

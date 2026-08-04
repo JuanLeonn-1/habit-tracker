@@ -1,0 +1,201 @@
+/* Layout and components. Tokens come from tokens.css. */
+
+.shell {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--sp-4) var(--sp-4) var(--sp-6);
+}
+
+/* ---- wordmark ---- */
+/* Script is used here and nowhere else. "TRACKER" gets the spaced-caps
+   treatment instead of a third font file. */
+
+.wordmark {
+  font-size: var(--text-2xl);
+  font-family: var(--font-script);
+  font-weight: 400;
+  color: var(--gold);
+  text-align: center;
+  line-height: 1.1;
+}
+
+.wordmark span {
+  font-family: var(--font-sans);
+  font-size: 0.62em;
+  font-weight: 500;
+  letter-spacing: var(--tracking-heading);
+  text-transform: uppercase;
+  color: var(--ink);
+  vertical-align: 0.18em;
+  margin-left: 0.15em;
+}
+
+/* ---- profile picker ---- */
+
+.picker {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+}
+
+.picker__hint {
+  margin: 0;
+  color: var(--ink-soft);
+  letter-spacing: var(--tracking-heading);
+  text-transform: uppercase;
+  font-size: var(--text-xs);
+}
+
+.picker__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  justify-content: center;
+}
+
+.picker__option {
+  background: var(--pill);
+  color: var(--ink);
+  padding: var(--sp-3) var(--sp-6);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-lg);
+  box-shadow: var(--shadow);
+  transition: transform 0.12s ease;
+}
+
+.picker__option:hover { transform: translateY(-2px); }
+
+/* ---- top bar and tabs ---- */
+
+.topbar {
+  text-align: center;
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--gold-soft);
+}
+
+.topbar__profile {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-heading);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-4) 0;
+}
+
+.tabs__tab {
+  text-decoration: none;
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-heading);
+  text-transform: uppercase;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--radius-pill);
+}
+
+.tabs__tab[aria-current='true'] {
+  background: var(--paper-sunken);
+  color: var(--ink);
+}
+
+/* ---- view header ---- */
+
+.view-head {
+  text-align: center;
+  margin-bottom: var(--sp-5);
+}
+
+.view-head__eyebrow {
+  margin: 0;
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-heading);
+  color: var(--ink-faint);
+}
+
+.view-head__title {
+  font-size: var(--text-xl);
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+/* ---- habit list (Today) ---- */
+
+.habits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.habit__hit {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  text-align: left;
+  padding: var(--sp-3);
+  border-radius: var(--radius);
+  background: var(--pill);
+  box-shadow: var(--shadow);
+  transition: opacity 0.15s ease;
+}
+
+.habit[data-done='true'] .habit__hit { opacity: 0.55; }
+
+.habit__check {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--paper-raised);
+  border: 1.5px solid rgba(90, 74, 66, 0.22);
+  display: grid;
+  place-items: center;
+}
+
+.habit[data-done='true'] .habit__check::after {
+  content: '';
+  width: 12px;
+  height: 7px;
+  border-left: 2.5px solid var(--ink);
+  border-bottom: 2.5px solid var(--ink);
+  transform: rotate(-45deg) translate(1px, -2px);
+}
+
+.habit__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.habit__name {
+  font-size: var(--text-base);
+  font-weight: 500;
+}
+
+.habit[data-done='true'] .habit__name { text-decoration: line-through; }
+
+.habit__icon { margin-right: var(--sp-2); }
+
+.habit__meta {
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+.empty {
+  text-align: center;
+  color: var(--ink-faint);
+  padding: var(--sp-6) var(--sp-4);
+}
