@@ -5,7 +5,7 @@
    This module just watches for changes and reconciles with the gist in the
    background. Pull the plug on it and the app carries on working. */
 
-import { syncKey } from './profiles.js';
+import { syncKey, profileById } from './profiles.js';
 import { createGistClient } from './storage/gist.js';
 import { merge } from './lib/merge.js';
 
@@ -65,6 +65,7 @@ export function createSync({ store, profileId, onStatus }) {
     try {
       const client = createGistClient(config.token);
       const remote = await client.read(config.gistId);
+      assertSameProfile(remote);
       const merged = merge(store.getState(), remote);
 
       // Guarded so writing the merge back into the store does not look like a
@@ -73,7 +74,7 @@ export function createSync({ store, profileId, onStatus }) {
       store.replaceState(merged);
       applying = false;
 
-      await client.write(config.gistId, store.getState());
+      await client.write(config.gistId, store.getState(), profileId);
       writeConfig({ ...config, lastSyncedAt: Date.now() });
     } catch (err) {
       lastError = err.message;
@@ -84,13 +85,23 @@ export function createSync({ store, profileId, onStatus }) {
     }
   }
 
+  /** Refuses a gist belonging to the other profile before anything is merged. */
+  function assertSameProfile(remote) {
+    if (!remote?.profile || remote.profile === profileId) return;
+    const owner = profileById(remote.profile);
+    throw new Error(
+      `That Gist ID belongs to ${owner ? owner.name : remote.profile}'s profile. `
+      + 'Use the ID shown on a device already syncing this profile.'
+    );
+  }
+
   async function connect(token, gistId) {
     const client = createGistClient(token);
     await client.verify();
 
     let id = gistId?.trim() || null;
-    if (id) await client.read(id);
-    else id = await client.create(store.getState());
+    if (id) assertSameProfile(await client.read(id));
+    else id = await client.create(store.getState(), profileId);
 
     writeConfig({ token, gistId: id, lastSyncedAt: null });
     await syncNow();

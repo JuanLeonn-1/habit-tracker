@@ -30,13 +30,13 @@ export function createGistClient(token) {
       return true;
     },
 
-    async create(state) {
+    async create(state, profileId) {
       const gist = await request('/gists', {
         method: 'POST',
         body: JSON.stringify({
-          description: 'Habit Tracker data — managed by the app, do not edit by hand',
+          description: `Habit Tracker data (${profileId}) — managed by the app, do not edit by hand`,
           public: false,
-          files: { [FILENAME]: { content: JSON.stringify(state) } },
+          files: { [FILENAME]: { content: stamp(state, profileId) } },
         }),
       });
       return gist.id;
@@ -57,15 +57,25 @@ export function createGistClient(token) {
       return JSON.parse(content);
     },
 
-    async write(gistId, state) {
+    async write(gistId, state, profileId) {
       await request(`/gists/${gistId}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          files: { [FILENAME]: { content: JSON.stringify(state) } },
+          files: { [FILENAME]: { content: stamp(state, profileId) } },
         }),
       });
     },
   };
+}
+
+/* Every gist carries which profile it belongs to.
+   With two people syncing two profiles across four devices, pasting the wrong
+   Gist ID into the wrong profile is an easy slip — and because the merge is
+   designed to combine rather than overwrite, it would faithfully blend both
+   people's habits together and then push the mixture to both gists. The stamp
+   makes that mistake bounce instead. */
+function stamp(state, profileId) {
+  return JSON.stringify({ ...state, profile: profileId });
 }
 
 function explain(status) {
