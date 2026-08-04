@@ -2,30 +2,25 @@
    This view is for REVIEWING a month. The daily tick lives in Today, because
    31 columns on a 375px screen give ~10px cells that nobody can hit. */
 
-import { MONTHS, WEEKDAYS, monthDays, fromKey, isToday } from '../lib/date.js';
+import { WEEKDAYS, monthDays, fromKey, isToday } from '../lib/date.js';
+import { current } from '../lib/month-cursor.js';
 import { stats } from '../lib/streaks.js';
+import { monthNav } from './month-nav.js';
 import { openHabitEditor } from './habit-editor.js';
 
-let cursor = null;
 // Re-rendering rebuilds the table, which would snap the horizontal scroll back
 // to day 1 every time a cell is ticked. Remembered here and restored after paint.
 let scrollLeft = 0;
 
 export function renderMonth(store, repaint) {
-  if (!cursor) {
-    const now = new Date();
-    cursor = { year: now.getFullYear(), month: now.getMonth() };
-  }
+  const { year, month } = current();
 
   const el = document.createElement('section');
-  el.append(monthNav(repaint));
+  el.append(monthNav(repaint, () => { scrollLeft = 0; }));
 
   const habits = store.habits();
-  if (habits.length === 0) {
-    el.append(empty('No habits yet.'));
-  } else {
-    el.append(table(store, habits, repaint));
-  }
+  if (habits.length === 0) el.append(empty('No habits yet.'));
+  else el.append(table(store, habits, year, month));
 
   el.append(addButton(store, repaint));
 
@@ -35,27 +30,8 @@ export function renderMonth(store, repaint) {
   return el;
 }
 
-function monthNav(repaint) {
-  const nav = document.createElement('header');
-  nav.className = 'month-nav';
-  nav.innerHTML = `
-    <button class="month-nav__arrow" data-step="-1" aria-label="Previous month">‹</button>
-    <h2 class="month-nav__label">${MONTHS[cursor.month]} ${cursor.year}</h2>
-    <button class="month-nav__arrow" data-step="1" aria-label="Next month">›</button>
-  `;
-  nav.addEventListener('click', (event) => {
-    const step = event.target.closest('[data-step]')?.dataset.step;
-    if (!step) return;
-    const date = new Date(cursor.year, cursor.month + Number(step), 1);
-    cursor = { year: date.getFullYear(), month: date.getMonth() };
-    scrollLeft = 0;
-    repaint();
-  });
-  return nav;
-}
-
-function table(store, habits, repaint) {
-  const days = monthDays(cursor.year, cursor.month);
+function table(store, habits, year, month) {
+  const days = monthDays(year, month);
   const entries = store.getState().entries;
 
   const wrap = document.createElement('div');
@@ -85,7 +61,7 @@ function table(store, habits, repaint) {
   /* body */
   const body = document.createElement('tbody');
   for (const habit of habits) {
-    const info = stats(habit, entries, cursor.year, cursor.month);
+    const info = stats(habit, entries, year, month);
     const tr = document.createElement('tr');
     tr.style.setProperty('--pill', `var(--c${habit.color})`);
 
@@ -100,7 +76,9 @@ function table(store, habits, repaint) {
         <span class="grid__pill-name">${escapeHtml(habit.name)}</span>
         <small>${escapeHtml(info.label)}</small>
       </span>`;
-    nameButton.addEventListener('click', () => openHabitEditor(store, habit.id, repaint));
+    nameButton.addEventListener('click', () => openHabitEditor(store, habit.id, () => {
+      scrollLeft = wrap.scrollLeft;
+    }));
     name.append(nameButton);
     tr.append(name);
 

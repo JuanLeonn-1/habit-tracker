@@ -9,12 +9,14 @@ import { seedFor } from './seed.js';
 import { renderProfilePicker } from './views/profile.js';
 import { renderToday } from './views/today.js';
 import { renderMonth } from './views/grid.js';
+import { renderCalendar } from './views/calendar.js';
 
 const root = document.getElementById('app');
 
 const ROUTES = {
   '#/today': { label: 'Today', render: renderToday },
   '#/month': { label: 'Month', render: renderMonth },
+  '#/calendar': { label: 'Calendar', render: renderCalendar },
 };
 
 // Keeps the phone's browser chrome in step with the profile's theme; a cream

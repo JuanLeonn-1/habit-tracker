@@ -536,6 +536,175 @@ thead .grid__total {
   color: var(--ink-faint);
 }
 
+/* ---- calendar ---- */
+
+.cal {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.cal thead th {
+  font-weight: 500;
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  padding-bottom: var(--sp-2);
+}
+
+.cal__cell {
+  border: 1px solid var(--rule);
+  vertical-align: top;
+  height: 84px;
+  padding: 0;
+}
+
+/* Days either side of the month stay visible and tappable — the reference
+   sheet shows them too, and a task on the 31st does not stop mattering
+   because you paged forward. */
+.cal__cell[data-in-month='false'] { opacity: 0.42; }
+
+.cal__cell[data-today='true'] { background: var(--today); }
+
+.cal__day {
+  width: 100%;
+  min-height: 82px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-1);
+  text-align: left;
+}
+
+.cal__num {
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+.cal__cell[data-today='true'] .cal__num {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.cal__notes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cal__note {
+  background: color-mix(in srgb, var(--pill) var(--pill-mix), var(--paper-raised));
+  border-radius: var(--radius-sm);
+  padding: 1px 4px;
+  font-size: 0.625rem;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cal__note[data-done='true'] {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.cal__hint {
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  margin-top: var(--sp-3);
+}
+
+/* ---- day sheet ---- */
+
+.todos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  max-height: 42vh;
+  overflow-y: auto;
+}
+
+.todos__empty {
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+}
+
+.todo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: color-mix(in srgb, var(--pill) var(--pill-mix), var(--paper-raised));
+  border-radius: var(--radius-sm);
+  padding: var(--sp-1) var(--sp-2);
+}
+
+.todo__check {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--rule-strong);
+  background: var(--paper);
+  display: grid;
+  place-items: center;
+}
+
+.todo[data-done='true'] .todo__check::after {
+  content: '';
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+
+.todo__title {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--ink);
+  background: none;
+  border: none;
+  padding: var(--sp-1);
+  border-radius: var(--radius-sm);
+}
+
+.todo__title:focus {
+  background: var(--paper);
+  outline: none;
+}
+
+.todo[data-done='true'] .todo__title {
+  text-decoration: line-through;
+  color: var(--ink-soft);
+}
+
+.todo__remove {
+  flex: none;
+  color: var(--ink-faint);
+  font-size: var(--text-lg);
+  line-height: 1;
+  padding: 0 var(--sp-1);
+}
+
+.todo__remove:hover { color: var(--danger); }
+
+.todo-add {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.swatches--compact { grid-column: 1 / -1; }
+.swatches--compact .swatch { width: 20px; height: 20px; }
+
 /* ---- phone ---- */
 
 @media (max-width: 520px) {
@@ -552,4 +721,33 @@ thead .grid__total {
   .grid__pill small { display: none; }
 
   .grid__pill { padding: var(--sp-1) var(--sp-2); gap: var(--sp-1); }
+
+  .cal__cell { height: 62px; }
+  .cal__day { min-height: 60px; }
+
+  /* A 7-column month leaves ~50px per day: no room for words. Each note
+     becomes a dot and the day sheet carries the text. */
+  .cal__notes {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 3px;
+    padding-top: 2px;
+  }
+
+  .cal__note {
+    width: 6px;
+    height: 6px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--pill);
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .cal__note[data-done='true'] {
+    opacity: 0.3;
+    text-decoration: none;
+  }
+
+  .tabs__tab { padding: var(--sp-2) var(--sp-3); }
 }
