@@ -70,6 +70,13 @@
   --radius-pill: 999px;
 
   --shadow: 0 1px 2px rgba(90, 74, 66, 0.06), 0 4px 12px rgba(90, 74, 66, 0.05);
+  --backdrop: rgba(90, 74, 66, 0.35);
+
+  /* How much of a habit's colour shows through as a surface.
+     100% hands back the colour untouched, so the pastel theme is unaffected;
+     a dark theme dials this down and tints its own surface instead. One token
+     lets both live in the same component rules. */
+  --pill-mix: 100%;
 
   /* Grid cell sizing — one place, because the month grid depends on it
      for the sticky name column offset. */
@@ -83,37 +90,51 @@
    attribute on <html>. Swap any value here to retheme a profile. */
 
 [data-profile='leon'] {
-  --paper: #f2f3ef;
-  --paper-raised: #fafbf7;
-  --paper-sunken: #e7e9e2;
+  /* Tells the browser to render scrollbars and native controls dark too —
+     without it they stay light and stand out badly against the page. */
+  color-scheme: dark;
 
-  --ink: #3f4a48;
-  --ink-soft: #6f7d79;
-  --ink-faint: #a3aeaa;
+  --paper: #171a1f;
+  --paper-raised: #1f232a;
+  --paper-sunken: #121418;
 
-  --rule: #dcdfd8;
-  --rule-strong: #bfc4bb;
+  --ink: #e3e6e4;
+  --ink-soft: #99a2a8;
+  --ink-faint: #6c757c;
 
-  /* Bronze instead of gold — same metallic idea, cooler. */
-  --gold: #8a7a52;
-  --gold-soft: #cfc5a6;
+  --rule: #2c313a;
+  --rule-strong: #3d4450;
 
-  --today: #dde3d8;
+  /* Warm amber carries the metallic accent onto a dark ground, where the
+     original gold would go muddy. */
+  --gold: #d7a75a;
+  --gold-soft: #5c4a29;
 
-  /* Muted earth and slate tones rather than candy pastels. Same lightness
-     range so the dark ink keeps its contrast on every row. */
-  --c0:  #c2d0bc;  /* moss */
-  --c1:  #c3cdd6;  /* slate */
-  --c2:  #b9c6d8;  /* denim */
-  --c3:  #e0d6be;  /* sand */
-  --c4:  #dcc4b8;  /* clay */
-  --c5:  #cfd4b4;  /* olive */
-  --c6:  #e0c0ae;  /* terracotta */
-  --c7:  #c4cbd2;  /* steel */
-  --c8:  #d3bfbd;  /* dust */
-  --c9:  #b6cdca;  /* teal */
-  --c10: #d0ccc4;  /* stone */
-  --c11: #e2d2b0;  /* ochre */
+  --today: #272d36;
+  --danger: #e0796f;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
+  --backdrop: rgba(0, 0, 0, 0.6);
+
+  /* Saturated, not pastel. Held to a common lightness so no single row
+     shouts louder than the rest. */
+  --c0:  #6db5a4;  /* teal */
+  --c1:  #7ba0dc;  /* blue */
+  --c2:  #9c8cdc;  /* violet */
+  --c3:  #ce8ac6;  /* orchid */
+  --c4:  #e08a82;  /* coral */
+  --c5:  #e3a263;  /* amber */
+  --c6:  #d3c069;  /* wheat */
+  --c7:  #a2c56e;  /* lime */
+  --c8:  #6bbb86;  /* green */
+  --c9:  #5fb9cc;  /* cyan */
+  --c10: #afa79a;  /* taupe */
+  --c11: #d18fa6;  /* rose */
+
+  /* Full-strength colour would glare as a row-sized block on a dark ground.
+     Surfaces get a tint; the small ticked cells keep the colour pure, which is
+     what makes a filled month read at a glance. */
+  --pill-mix: 22%;
 }
 
 * { box-sizing: border-box; }

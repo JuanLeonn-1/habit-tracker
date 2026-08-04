@@ -17,13 +17,25 @@ const ROUTES = {
   '#/month': { label: 'Month', render: renderMonth },
 };
 
+// Keeps the phone's browser chrome in step with the profile's theme; a cream
+// bar above a dark page is the tell that an app was themed halfway.
+const THEME_COLOR = { mariana: '#fbf7f0', leon: '#171a1f' };
+
+function applyTheme(profileId) {
+  if (profileId) document.documentElement.dataset.profile = profileId;
+  else delete document.documentElement.dataset.profile;
+
+  document.querySelector('meta[name="theme-color"]')
+    .setAttribute('content', THEME_COLOR[profileId] ?? '#fbf7f0');
+}
+
 boot();
 
 async function boot() {
   const profileId = getActiveId();
 
   if (!profileId) {
-    delete document.documentElement.dataset.profile;
+    applyTheme(null);
     root.replaceChildren(renderProfilePicker(async (id) => {
       setActiveId(id);
       await boot();
@@ -33,7 +45,7 @@ async function boot() {
 
   // The only line that themes the app. Every colour downstream is a token,
   // so a profile theme is a CSS override block and nothing else.
-  document.documentElement.dataset.profile = profileId;
+  applyTheme(profileId);
 
   const adapter = createLocalAdapter(stateKey(profileId));
   // First run for this profile seeds the starting habit list; every later run
