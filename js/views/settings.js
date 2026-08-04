@@ -1,13 +1,15 @@
-/* Profile switching, backup and reset. */
+/* Profile switching, sync, backup and reset. */
 
 import { profileById, getActiveId, clearActive } from '../profiles.js';
 import { seedFor } from '../seed.js';
 import { today } from '../lib/date.js';
 
-export function renderSettings(store, repaint) {
+export function renderSettings(store, repaint, ctx) {
   const profileId = getActiveId();
   const profile = profileById(profileId);
   const state = store.getState();
+  const sync = ctx?.sync;
+  const syncState = sync ? sync.status() : { connected: false };
 
   const el = document.createElement('section');
   el.className = 'settings';
@@ -27,11 +29,12 @@ export function renderSettings(store, repaint) {
       </div>
     </section>
 
+    ${syncCard(syncState)}
+
     <section class="card">
       <h3 class="card__title">Backup</h3>
       <p class="card__body">
-        Data lives in this browser only. Export a copy before clearing browsing
-        data or moving to a new phone.
+        Export a copy before clearing browsing data or moving to a new phone.
       </p>
       <div class="card__actions">
         <button class="btn btn--primary" data-act="export">Export a copy</button>
@@ -61,29 +64,78 @@ export function renderSettings(store, repaint) {
     message.dataset.tone = tone;
   };
 
-  el.addEventListener('click', (event) => {
+  const syncNote = el.querySelector('[data-role="sync-message"]');
+  const saySync = (text, tone = 'ok') => {
+    if (!syncNote) return;
+    syncNote.textContent = text;
+    syncNote.dataset.tone = tone;
+  };
+
+  el.addEventListener('click', async (event) => {
     const button = event.target.closest('button[data-act]');
     if (!button) return;
+    const act = button.dataset.act;
 
-    if (button.dataset.act === 'switch') {
+    if (act === 'switch') {
       clearActive();
       location.reload();
       return;
     }
 
-    if (button.dataset.act === 'export') {
+    if (act === 'export') {
       exportState(store.getState(), profileId);
       say('Exported.');
       return;
     }
 
-    if (button.dataset.act === 'reset') {
+    if (act === 'reset') {
       if (button.dataset.armed !== 'true') {
         button.dataset.armed = 'true';
         button.textContent = 'Tap again to reset';
         return;
       }
       store.replaceState(seedFor(profileId));
+      repaint();
+      return;
+    }
+
+    if (act === 'connect') {
+      const token = el.querySelector('#sync-token').value.trim();
+      const gistId = el.querySelector('#sync-gist').value.trim();
+      if (!token) return saySync('Paste a token first.', 'error');
+
+      button.disabled = true;
+      saySync('Connecting…');
+      try {
+        await sync.connect(token, gistId);
+        repaint();
+      } catch (err) {
+        button.disabled = false;
+        saySync(err.message, 'error');
+      }
+      return;
+    }
+
+    if (act === 'sync-now') {
+      await sync.syncNow();
+      const after = sync.status();
+      if (after.error) saySync(after.error, 'error');
+      return;
+    }
+
+    if (act === 'copy-gist') {
+      await navigator.clipboard.writeText(syncState.gistId).catch(() => {});
+      button.textContent = 'Copied';
+      return;
+    }
+
+    if (act === 'disconnect') {
+      if (button.dataset.armed !== 'true') {
+        button.dataset.armed = 'true';
+        button.textContent = 'Tap again to disconnect';
+        return;
+      }
+      sync.disconnect();
       repaint();
     }
   });
@@ -105,6 +157,69 @@ export function renderSettings(store, repaint) {
   });
 
   return el;
+}
+
+function syncCard(state) {
+  if (state.connected) {
+    return `
+      <section class="card">
+        <h3 class="card__title">Sync</h3>
+        <p class="card__body">
+          Connected. ${state.busy ? 'Syncing…' : `Last synced ${ago(state.lastSyncedAt)}.`}
+        </p>
+        <p class="card__stat">
+          Gist ID <code class="code">${state.gistId}</code>
+        </p>
+        <div class="card__actions">
+          <button class="btn btn--primary" data-act="sync-now" ${state.busy ? 'disabled' : ''}>Sync now</button>
+          <button class="btn btn--ghost" data-act="copy-gist">Copy ID</button>
+          <button class="btn btn--danger" data-act="disconnect">Disconnect</button>
+        </div>
+        <p class="card__note" data-role="sync-message" ${state.error ? 'data-tone="error"' : ''}>${state.error ?? ''}</p>
+        <p class="card__note">
+          Paste that ID on your other device to point it at the same data.
+        </p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="card">
+      <h3 class="card__title">Sync</h3>
+      <p class="card__body">
+        Optional. Keeps this profile in step across your phone and laptop.
+        Everything works without it — this only saves you moving backups by hand.
+      </p>
+
+      <ol class="steps">
+        <li>Open <span class="code">github.com/settings/personal-access-tokens</span> and create a fine-grained token.</li>
+        <li>Give it <strong>Gists: Read and write</strong> and nothing else.</li>
+        <li>Paste it below. Leave the Gist ID empty on the first device — one gets created for you.</li>
+      </ol>
+
+      <div class="field">
+        <label class="field__label" for="sync-token">Token</label>
+        <input class="field__input" id="sync-token" type="password" autocomplete="off" placeholder="github_pat_…">
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="sync-gist">
+          Gist ID <span class="field__hint">second device only</span>
+        </label>
+        <input class="field__input" id="sync-gist" autocomplete="off" placeholder="leave empty the first time">
+      </div>
+
+      <div class="card__actions">
+        <button class="btn btn--primary" data-act="connect">Connect</button>
+      </div>
+
+      <p class="card__note" data-role="sync-message"></p>
+      <p class="card__note">
+        The token is kept in this browser. Anyone who can use this browser can
+        read it from developer tools, so only do this on your own devices.
+      </p>
+    </section>
+  `;
 }
 
 /* The sync token is stored under a separate key and never reaches the state
@@ -130,6 +245,18 @@ function validate(parsed) {
     entries: parsed.entries,
     events: Array.isArray(parsed.events) ? parsed.events : [],
   };
+}
+
+function ago(timestamp) {
+  if (!timestamp) return 'never';
+  const seconds = Math.round((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
 }
 
 function countEntries(state) {

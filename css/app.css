@@ -766,6 +766,29 @@ label.btn {
 
 .card__note[data-tone='error'] { color: var(--danger); }
 
+.card .field { margin-top: var(--sp-3); }
+
+.steps {
+  margin: 0 0 var(--sp-2);
+  padding-left: 1.2em;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+
+.steps li { margin-bottom: var(--sp-1); }
+
+.code {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 0.8em;
+  background: var(--paper-sunken);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+  user-select: all;
+  word-break: break-all;
+}
+
+.btn:disabled { opacity: 0.5; cursor: default; }
+
 /* ---- phone ---- */
 
 @media (max-width: 520px) {

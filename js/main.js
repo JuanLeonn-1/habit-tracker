@@ -11,6 +11,7 @@ import { renderToday } from './views/today.js';
 import { renderMonth } from './views/grid.js';
 import { renderCalendar } from './views/calendar.js';
 import { renderSettings } from './views/settings.js';
+import { createSync } from './sync.js';
 
 const root = document.getElementById('app');
 
@@ -62,9 +63,19 @@ async function boot() {
   const shell = renderShell(profileId, store);
   root.replaceChildren(shell);
 
-  store.subscribe(() => paint(shell, store));
-  window.addEventListener('hashchange', () => paint(shell, store));
-  paint(shell, store);
+  const ctx = { profileId };
+  ctx.sync = createSync({
+    store,
+    profileId,
+    onStatus: () => paint(shell, store, ctx),
+  });
+
+  store.subscribe(() => paint(shell, store, ctx));
+  window.addEventListener('hashchange', () => paint(shell, store, ctx));
+  paint(shell, store, ctx);
+
+  // Pull whatever the other device did while this one was closed.
+  ctx.sync.syncNow();
 }
 
 function renderShell(profileId, store) {
@@ -98,15 +109,15 @@ function renderShell(profileId, store) {
   return shell;
 }
 
-function paint(shell, store) {
+function paint(shell, store, ctx) {
   const hash = ROUTES[location.hash] ? location.hash : '#/today';
 
   for (const tab of shell.querySelectorAll('.tabs__tab')) {
     tab.setAttribute('aria-current', String(tab.dataset.hash === hash));
   }
 
-  const repaint = () => paint(shell, store);
-  shell.querySelector('.main').replaceChildren(ROUTES[hash].render(store, repaint));
+  const repaint = () => paint(shell, store, ctx);
+  shell.querySelector('.main').replaceChildren(ROUTES[hash].render(store, repaint, ctx));
 }
 
 if ('serviceWorker' in navigator) {

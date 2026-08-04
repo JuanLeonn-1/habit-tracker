@@ -5,7 +5,7 @@
 // Bump this on every deploy. The browser byte-compares this file, finds it
 // changed, installs the new worker and drops the old cache. Forget to bump it
 // and everyone keeps seeing the previous version indefinitely.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `habit-tracker-${VERSION}`;
 
 const ASSETS = [
@@ -18,9 +18,12 @@ const ASSETS = [
   './js/profiles.js',
   './js/seed.js',
   './js/store.js',
+  './js/sync.js',
   './js/storage/local.js',
+  './js/storage/gist.js',
   './js/lib/date.js',
   './js/lib/id.js',
+  './js/lib/merge.js',
   './js/lib/streaks.js',
   './js/lib/month-cursor.js',
   './js/views/profile.js',
