@@ -106,6 +106,7 @@ function explain(status) {
   if (status === 401) return 'GitHub rejected that token. Check it was copied whole.';
   if (status === 403) return 'That token is missing Gist read/write permission.';
   if (status === 404) return 'No gist with that ID is visible to this token.';
+  if (status === 409) return 'The other device wrote at the same moment (409).';
   if (status === 422) return 'GitHub rejected the data.';
   if (status === 429) return 'Too many requests to GitHub. Try again in a minute.';
   return `GitHub returned an error (${status}).`;

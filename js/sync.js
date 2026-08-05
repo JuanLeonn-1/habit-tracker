@@ -55,17 +55,13 @@ export function createSync({ store, profileId, onStatus }) {
    * the merge is per-entry, even losing that race only costs the very last
    * tick, not the other device's day.
    */
-  async function syncNow() {
-    if (!status().connected || busy) return;
+  const ATTEMPTS = 4;
 
-    busy = true;
-    lastError = null;
-    announce();
-
-    try {
-      const client = createGistClient(config.token);
+  async function reconcile(client) {
+    for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
       const remote = await client.read(config.gistId);
       assertSameProfile(remote);
+
       const merged = merge(store.getState(), remote);
 
       // Guarded so writing the merge back into the store does not look like a
@@ -74,7 +70,34 @@ export function createSync({ store, profileId, onStatus }) {
       store.replaceState(merged);
       applying = false;
 
-      await client.write(config.gistId, store.getState(), profileId);
+      // updatedAt is exactly "when did this data last change", so equal
+      // timestamps mean we have nothing the server is missing. Writing anyway
+      // was the whole problem: two devices opening the app would each push an
+      // identical copy and collide with each other for no reason.
+      if (merged.updatedAt === remote.updatedAt) return;
+
+      try {
+        await client.write(config.gistId, store.getState(), profileId);
+        return;
+      } catch (err) {
+        // A gist is a git repo underneath, so simultaneous writes are rejected
+        // rather than merged. Re-reading and re-merging is the fix; the merge
+        // is idempotent, so replaying it costs nothing.
+        if (!err.message.includes('(409)') || attempt === ATTEMPTS) throw err;
+        await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
+      }
+    }
+  }
+
+  async function syncNow() {
+    if (!status().connected || busy) return;
+
+    busy = true;
+    lastError = null;
+    announce();
+
+    try {
+      await reconcile(createGistClient(config.token));
       writeConfig({ ...config, lastSyncedAt: Date.now() });
     } catch (err) {
       lastError = err.message;
