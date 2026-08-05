@@ -9,6 +9,7 @@ import { seedFor } from './seed.js';
 import { renderProfilePicker } from './views/profile.js';
 import { renderToday } from './views/today.js';
 import { renderMonth } from './views/grid.js';
+import { renderYear } from './views/year.js';
 import { renderCalendar } from './views/calendar.js';
 import { renderSettings } from './views/settings.js';
 import { createSync } from './sync.js';
@@ -18,6 +19,7 @@ const root = document.getElementById('app');
 const ROUTES = {
   '#/today': { label: 'Today', render: renderToday },
   '#/month': { label: 'Month', render: renderMonth },
+  '#/year': { label: 'Year', render: renderYear },
   '#/calendar': { label: 'Calendar', render: renderCalendar },
   '#/settings': { label: 'Settings', render: renderSettings },
 };

@@ -3,7 +3,16 @@
    lands on the next day, which silently splits a streak in two. That bug is the
    reason all date handling lives here and nowhere else. */
 
+/** Indexed by getDay(), so Sunday stays at 0 — this is a lookup, not an order. */
 export const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+/** Display order: weeks start on Monday, so Sunday lands at the end. */
+export const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+/** Days from Monday to the given JS day number. */
+function sinceMonday(jsDay) {
+  return (jsDay + 6) % 7;
+}
 
 export const MONTHS = [
   'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
@@ -49,10 +58,10 @@ export function daysSince(key) {
   return daysBetween(key, today());
 }
 
-/** Key of the Sunday starting that week — weeks run SUN..SAT to match the calendar. */
+/** Key of the Monday starting that week — weeks run MON..SUN. */
 export function weekKey(key) {
   const d = fromKey(key);
-  return toKey(addDaysToDate(d, -d.getDay()));
+  return toKey(addDaysToDate(d, -sinceMonday(d.getDay())));
 }
 
 function addDaysToDate(date, n) {
@@ -75,12 +84,12 @@ export function monthDays(year, month) {
 }
 
 /**
- * Six SUN..SAT weeks covering the month, including the leading and trailing
+ * Six MON..SUN weeks covering the month, including the leading and trailing
  * days from adjacent months — the reference sheet shows those too.
  */
 export function calendarWeeks(year, month) {
   const first = new Date(year, month, 1);
-  const start = addDaysToDate(first, -first.getDay());
+  const start = addDaysToDate(first, -sinceMonday(first.getDay()));
   const weeks = [];
   for (let w = 0; w < 6; w++) {
     const week = [];

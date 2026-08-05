@@ -1,7 +1,7 @@
 /* The monthly calendar — the bottom half of the reference sheet.
    Days of the week across, notes stacked inside each day. */
 
-import { calendarWeeks, WEEKDAYS, isToday } from '../lib/date.js';
+import { calendarWeeks, WEEKDAYS, WEEK_ORDER, isToday } from '../lib/date.js';
 import { current } from '../lib/month-cursor.js';
 import { monthNav } from './month-nav.js';
 import { openDaySheet } from './day-sheet.js';
@@ -17,10 +17,10 @@ export function renderCalendar(store, repaint) {
 
   const head = document.createElement('thead');
   const headRow = document.createElement('tr');
-  for (const day of WEEKDAYS) {
+  for (const index of WEEK_ORDER) {
     const th = document.createElement('th');
     th.scope = 'col';
-    th.textContent = day;
+    th.textContent = WEEKDAYS[index];
     headRow.append(th);
   }
   head.append(headRow);

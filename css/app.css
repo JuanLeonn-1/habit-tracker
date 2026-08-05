@@ -87,6 +87,7 @@
 
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: var(--sp-2);
   padding: var(--sp-4) 0;
@@ -536,6 +537,103 @@ thead .grid__total {
   color: var(--ink-faint);
 }
 
+/* ---- year heatmap ---- */
+
+.year-wrap {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--sp-2);
+}
+
+.year {
+  --ycell: 5px;
+  --ygap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: max-content;
+}
+
+.year__row {
+  display: flex;
+  align-items: center;
+}
+
+.year__name {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  width: var(--name-col);
+  min-width: var(--name-col);
+  /* Opaque, or the bars scroll through underneath the pinned label. */
+  background: var(--paper);
+  padding-right: var(--sp-2);
+}
+
+.year__label {
+  font-size: 0.6875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.year__cells { display: flex; }
+
+.year__cell {
+  flex: none;
+  width: var(--ycell);
+  height: 16px;
+  background: var(--rule);
+  border-radius: 1px;
+}
+
+.year__cell[data-done='true'] { background: var(--pill); }
+
+/* A small gap at each month boundary, so a year reads as twelve blocks rather
+   than one undifferentiated strip. */
+.year__cell[data-first='true'] { margin-left: var(--ygap); }
+.year__cells > .year__cell:first-child { margin-left: 0; }
+
+.year__cell[data-today='true'] {
+  outline: 1px solid var(--ink-soft);
+  outline-offset: -1px;
+}
+
+.year__month {
+  flex: none;
+  /* Sized to its own month so the labels stay over their days. */
+  width: calc(var(--ycell) * var(--days));
+  font-size: 0.5625rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.year__month + .year__month { margin-left: var(--ygap); }
+
+.year__total {
+  width: 46px;
+  min-width: 46px;
+  padding-left: var(--sp-2);
+  text-align: right;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.year__row--head .year__total {
+  font-weight: 500;
+  font-size: 0.5625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
 /* ---- calendar ---- */
 
 .cal {
@@ -805,6 +903,10 @@ label.btn {
   .grid__pill small { display: none; }
 
   .grid__pill { padding: var(--sp-1) var(--sp-2); gap: var(--sp-1); }
+
+  /* Thinner bars so a year still fits a reasonable amount of scrolling. */
+  .year { --ycell: 4px; --ygap: 3px; }
+  .year__cell { height: 14px; }
 
   .cal__cell { height: 62px; }
   .cal__day { min-height: 60px; }
