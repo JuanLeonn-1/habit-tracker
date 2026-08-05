@@ -26,6 +26,15 @@ export function createStore({ adapter, state }) {
     emit();
   }
 
+  function countFor(habitId) {
+    const prefix = `${habitId}|`;
+    let total = 0;
+    for (const [key, value] of Object.entries(state.entries)) {
+      if (key.startsWith(prefix) && value?.done) total++;
+    }
+    return total;
+  }
+
   const store = {
     getState: () => state,
 
@@ -172,6 +181,62 @@ export function createStore({ adapter, state }) {
 
     deleteEvent(id) {
       store.updateEvent(id, { deletedAt: Date.now() });
+    },
+
+    /* ---- duplicate cleanup ---- */
+
+    /** Visible habits sharing a name — the residue of two devices that built
+        their starting lists separately and then synced. */
+    duplicateGroups() {
+      const groups = new Map();
+      for (const habit of store.habits()) {
+        const key = habit.name.trim().toLowerCase();
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(habit);
+      }
+      return [...groups.values()].filter((group) => group.length > 1);
+    },
+
+    /**
+     * Collapses same-named habits onto one copy.
+     *
+     * Records are moved across BEFORE the extra copies are retired, so a tick
+     * made against either twin survives — deleting the twin outright would
+     * silently take its history with it.
+     */
+    dedupeHabits() {
+      const groups = store.duplicateGroups();
+      if (groups.length === 0) return 0;
+
+      commit(() => {
+        const now = Date.now();
+
+        for (const group of groups) {
+          // Keep whichever copy carries the most history; ties go to the older.
+          const ranked = [...group].sort(
+            (a, b) => countFor(b.id) - countFor(a.id) || a.createdAt - b.createdAt
+          );
+          const [keeper, ...extras] = ranked;
+
+          for (const extra of extras) {
+            const prefix = `${extra.id}|`;
+            for (const key of Object.keys(state.entries)) {
+              if (!key.startsWith(prefix)) continue;
+              const target = entryKey(keeper.id, key.slice(prefix.length));
+              const mine = state.entries[target];
+              const theirs = state.entries[key];
+              if (!mine || (theirs?.updatedAt ?? 0) > (mine.updatedAt ?? 0)) {
+                state.entries[target] = theirs;
+              }
+              delete state.entries[key];
+            }
+            extra.deletedAt = now;
+            extra.updatedAt = now;
+          }
+        }
+      });
+
+      return groups.length;
     },
 
     /* ---- whole-state swap, for restore and reset ---- */

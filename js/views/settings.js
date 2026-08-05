@@ -29,6 +29,8 @@ export function renderSettings(store, repaint, ctx) {
       </div>
     </section>
 
+    ${duplicateCard(store)}
+
     ${syncCard(syncState)}
 
     <section class="card">
@@ -79,6 +81,12 @@ export function renderSettings(store, repaint, ctx) {
     if (act === 'switch') {
       clearActive();
       location.reload();
+      return;
+    }
+
+    if (act === 'dedupe') {
+      store.dedupeHabits();
+      repaint();
       return;
     }
 
@@ -157,6 +165,35 @@ export function renderSettings(store, repaint, ctx) {
   });
 
   return el;
+}
+
+function duplicateCard(store) {
+  const groups = store.duplicateGroups();
+  if (groups.length === 0) return '';
+
+  return `
+    <section class="card card--danger">
+      <h3 class="card__title">Duplicates found</h3>
+      <p class="card__body">
+        ${groups.length} habit${groups.length === 1 ? '' : 's'} appear more than
+        once. This happens when two devices built their starting lists
+        separately and then synced.
+      </p>
+      <p class="card__stat">${groups.map((g) => escapeHtml(g[0].name)).join(' · ')}</p>
+      <div class="card__actions">
+        <button class="btn btn--primary" data-act="dedupe">Merge duplicates</button>
+      </div>
+      <p class="card__note">
+        Ticks recorded against either copy are kept — nothing is lost.
+      </p>
+    </section>
+  `;
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
 }
 
 function syncCard(state) {
