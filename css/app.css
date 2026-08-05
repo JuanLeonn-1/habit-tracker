@@ -616,7 +616,13 @@ thead .grid__total {
 
 .year__month + .year__month { margin-left: var(--ygap); }
 
+/* Pinned to the right edge. A year is ~1800px wide, so left unpinned the count
+   — the single most useful number here — sits off-screen until you scroll all
+   the way across. */
 .year__total {
+  position: sticky;
+  right: 0;
+  z-index: 2;
   width: 46px;
   min-width: 46px;
   padding-left: var(--sp-2);
@@ -624,6 +630,7 @@ thead .grid__total {
   font-size: var(--text-xs);
   font-weight: 600;
   color: var(--ink-soft);
+  background: var(--paper);
 }
 
 .year__row--head .year__total {
