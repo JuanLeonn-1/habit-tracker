@@ -10,6 +10,7 @@ import { createGistClient } from './storage/gist.js';
 import { merge } from './lib/merge.js';
 
 const DEBOUNCE_MS = 3000;
+const ATTEMPTS = 4;
 
 export function createSync({ store, profileId, onStatus }) {
   let config = readConfig();
@@ -37,6 +38,7 @@ export function createSync({ store, profileId, onStatus }) {
       connected: Boolean(config?.token && config?.gistId),
       gistId: config?.gistId ?? null,
       lastSyncedAt: config?.lastSyncedAt ?? null,
+      pending: Boolean(config?.pending),
       busy,
       error: lastError,
     };
@@ -47,42 +49,58 @@ export function createSync({ store, profileId, onStatus }) {
   }
 
   /**
+   * Whether this device holds changes the gist has not got yet.
+   *
+   * Kept in storage rather than memory on purpose: a tick made offline and
+   * then closed would otherwise be forgotten on the next launch and never
+   * upload at all. Comparing timestamps instead was worse — two changes in the
+   * same millisecond made the app decide it had nothing to send.
+   */
+  function markPending() {
+    if (config && !config.pending) writeConfig({ ...config, pending: true });
+  }
+
+  /** Refuses a gist belonging to the other profile before anything is merged. */
+  function assertSameProfile(remote) {
+    if (!remote?.profile || remote.profile === profileId) return;
+    const owner = profileById(remote.profile);
+    throw new Error(
+      `That Gist ID belongs to ${owner ? owner.name : remote.profile}'s profile. `
+      + 'Use the ID shown on a device already syncing this profile.'
+    );
+  }
+
+  /**
    * Pull, merge, push — in that order, every time.
    *
-   * The gist API has no way to say "only write if nobody changed this since I
-   * read it", so pulling immediately before pushing keeps the window where a
-   * concurrent write could be missed down to a few milliseconds. And because
-   * the merge is per-entry, even losing that race only costs the very last
-   * tick, not the other device's day.
+   * The gist API cannot express "write only if unchanged", so pulling
+   * immediately before pushing keeps the window where a concurrent write could
+   * be missed down to milliseconds. A gist is a git repo underneath, so
+   * simultaneous writes are rejected with 409 rather than merged; re-reading
+   * and replaying the merge fixes that, and the merge is idempotent so
+   * replaying costs nothing.
    */
-  const ATTEMPTS = 4;
-
   async function reconcile(client) {
     for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
       const remote = await client.read(config.gistId);
       assertSameProfile(remote);
 
-      const merged = merge(store.getState(), remote);
-
       // Guarded so writing the merge back into the store does not look like a
       // user edit and schedule another push, which would loop forever.
       applying = true;
-      store.replaceState(merged);
+      store.replaceState(merge(store.getState(), remote));
       applying = false;
 
-      // updatedAt is exactly "when did this data last change", so equal
-      // timestamps mean we have nothing the server is missing. Writing anyway
-      // was the whole problem: two devices opening the app would each push an
-      // identical copy and collide with each other for no reason.
-      if (merged.updatedAt === remote.updatedAt) return;
+      // Nothing of ours to contribute. Pushing anyway was the whole problem:
+      // two devices opening the app each sent an identical copy and collided
+      // with each other for no reason.
+      if (!config.pending) return;
 
       try {
         await client.write(config.gistId, store.getState(), profileId);
+        writeConfig({ ...config, pending: false });
         return;
       } catch (err) {
-        // A gist is a git repo underneath, so simultaneous writes are rejected
-        // rather than merged. Re-reading and re-merging is the fix; the merge
-        // is idempotent, so replaying it costs nothing.
         if (!err.message.includes('(409)') || attempt === ATTEMPTS) throw err;
         await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
       }
@@ -108,16 +126,6 @@ export function createSync({ store, profileId, onStatus }) {
     }
   }
 
-  /** Refuses a gist belonging to the other profile before anything is merged. */
-  function assertSameProfile(remote) {
-    if (!remote?.profile || remote.profile === profileId) return;
-    const owner = profileById(remote.profile);
-    throw new Error(
-      `That Gist ID belongs to ${owner ? owner.name : remote.profile}'s profile. `
-      + 'Use the ID shown on a device already syncing this profile.'
-    );
-  }
-
   async function connect(token, gistId) {
     const client = createGistClient(token);
     await client.verify();
@@ -140,29 +148,28 @@ export function createSync({ store, profileId, onStatus }) {
 
       if (found.length === 0) {
         id = await client.create(store.getState(), profileId);
-      } else {
-        id = found[0];
+        writeConfig({ token, gistId: id, pending: false, lastSyncedAt: Date.now() });
+        return id;
       }
+
+      id = found[0];
     }
 
-    if (id !== config?.gistId || gistId?.trim()) {
-      const remote = await client.read(id).catch(() => null);
-      if (remote) {
-        assertSameProfile(remote);
+    const remote = await client.read(id);
+    assertSameProfile(remote);
 
-        // A device joining an existing sync before it has been used has
-        // nothing worth keeping, so it adopts the remote outright. Merging
-        // instead would pair its untouched starting list against the real one
-        // and leave every habit sitting there twice.
-        if (isPristine(store.getState())) {
-          applying = true;
-          store.replaceState(remote);
-          applying = false;
-        }
-      }
+    // A device joining an existing sync before it has been used has nothing
+    // worth keeping, so it adopts the remote outright. Merging instead would
+    // pair its untouched starting list against the real one and leave every
+    // habit sitting there twice.
+    const pristine = isPristine(store.getState());
+    if (pristine) {
+      applying = true;
+      store.replaceState(remote);
+      applying = false;
     }
 
-    writeConfig({ token, gistId: id, lastSyncedAt: null });
+    writeConfig({ token, gistId: id, pending: !pristine, lastSyncedAt: null });
     await syncNow();
     if (lastError) throw new Error(lastError);
     return id;
@@ -182,7 +189,9 @@ export function createSync({ store, profileId, onStatus }) {
   }
 
   store.subscribe(() => {
-    if (applying || !status().connected) return;
+    if (applying) return;
+    markPending();
+    if (!status().connected) return;
     clearTimeout(timer);
     timer = setTimeout(syncNow, DEBOUNCE_MS);
   });
