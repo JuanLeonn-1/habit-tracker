@@ -192,7 +192,7 @@ suite('streaks', () => {
   });
 
   test('flexible habits report time since, never a streak', () => {
-    const entries = { 'h1|' + at(-4): { done: true, updatedAt: 1 } };
+    const entries = { [`h1|${at(-4)}`]: { done: true, updatedAt: 1 } };
     const info = stats({ id: 'h1', type: 'flexible' }, entries, 2026, 7);
     eq(info.type, 'flexible');
     eq(info.label, '4 days ago');
