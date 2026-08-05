@@ -1,8 +1,7 @@
 /* GitHub Gist as the sync store.
 
    A secret gist is used rather than a file in the repo because the repo has to
-   be public for Pages to be free, and habit data has no business being public.
-   A secret gist has an unguessable URL and is not indexed. */
+   be public for Pages to be free, and habit data has no business being public. */
 
 const API = 'https://api.github.com';
 const FILENAME = 'habit-tracker.json';
@@ -23,11 +22,55 @@ export function createGistClient(token) {
     return response.status === 204 ? null : response.json();
   }
 
+  async function read(gistId) {
+    const gist = await request(`/gists/${gistId}`);
+    const file = gist.files?.[FILENAME];
+    if (!file) throw new Error(`That gist has no ${FILENAME} in it.`);
+
+    // Gists past 1MB come back with the content stripped and a raw_url in its
+    // place. Unlikely here, but syncing a truncated file would corrupt the
+    // data rather than fail loudly.
+    const content = file.truncated
+      ? await fetch(file.raw_url).then((r) => r.text())
+      : file.content;
+
+    return JSON.parse(content);
+  }
+
   return {
     /** Hits the gists endpoint directly, so it tests the one permission we need. */
     async verify() {
       await request('/gists?per_page=1');
       return true;
+    },
+
+    read,
+
+    /**
+     * Sync files on this account that belong to this profile.
+     *
+     * Connecting with the Gist ID left empty used to create a new one every
+     * time, so a second device would quietly start syncing against its own
+     * private copy while appearing to work. Looking first turns that into
+     * either the right answer or a clear question.
+     */
+    async findForProfile(profileId) {
+      const gists = await request('/gists?per_page=100');
+      const found = [];
+
+      for (const gist of gists) {
+        if (!gist.files?.[FILENAME]) continue;
+        try {
+          const data = await read(gist.id);
+          // Gists created before profiles were stamped have no marker; they
+          // are still candidates rather than silently ignored.
+          if (!data.profile || data.profile === profileId) found.push(gist.id);
+        } catch {
+          /* unreadable or not ours — skip */
+        }
+      }
+
+      return found;
     },
 
     async create(state, profileId) {
@@ -42,21 +85,6 @@ export function createGistClient(token) {
       return gist.id;
     },
 
-    async read(gistId) {
-      const gist = await request(`/gists/${gistId}`);
-      const file = gist.files?.[FILENAME];
-      if (!file) throw new Error(`That gist has no ${FILENAME} in it.`);
-
-      // Gists past 1MB come back with the content stripped and a raw_url in
-      // its place. Unlikely here, but silently syncing a truncated file would
-      // corrupt the data rather than fail loudly.
-      const content = file.truncated
-        ? await fetch(file.raw_url).then((r) => r.text())
-        : file.content;
-
-      return JSON.parse(content);
-    },
-
     async write(gistId, state, profileId) {
       await request(`/gists/${gistId}`, {
         method: 'PATCH',
@@ -68,12 +96,8 @@ export function createGistClient(token) {
   };
 }
 
-/* Every gist carries which profile it belongs to.
-   With two people syncing two profiles across four devices, pasting the wrong
-   Gist ID into the wrong profile is an easy slip — and because the merge is
-   designed to combine rather than overwrite, it would faithfully blend both
-   people's habits together and then push the mixture to both gists. The stamp
-   makes that mistake bounce instead. */
+/* Every gist carries which profile it belongs to, so pasting the wrong ID into
+   the wrong profile bounces instead of blending two people's habits together. */
 function stamp(state, profileId) {
   return JSON.stringify({ ...state, profile: profileId });
 }

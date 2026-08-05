@@ -101,21 +101,42 @@ export function createSync({ store, profileId, onStatus }) {
 
     let id = gistId?.trim() || null;
 
-    if (id) {
-      const remote = await client.read(id);
-      assertSameProfile(remote);
+    if (!id) {
+      // Left empty, so look before creating. Creating blindly is how a second
+      // device ends up syncing against its own private copy while looking
+      // perfectly connected.
+      const found = await client.findForProfile(profileId);
 
-      // A device joining an existing sync before it has been used has nothing
-      // worth keeping, so it adopts the remote outright. Merging instead would
-      // pair its untouched starting list against the real one and leave every
-      // habit sitting there twice.
-      if (isPristine(store.getState())) {
-        applying = true;
-        store.replaceState(remote);
-        applying = false;
+      if (found.length > 1) {
+        throw new Error(
+          `This account already has ${found.length} sync files for this profile. `
+          + 'Paste the Gist ID shown on the device you want to match, instead of '
+          + 'leaving this empty.'
+        );
       }
-    } else {
-      id = await client.create(store.getState(), profileId);
+
+      if (found.length === 0) {
+        id = await client.create(store.getState(), profileId);
+      } else {
+        id = found[0];
+      }
+    }
+
+    if (id !== config?.gistId || gistId?.trim()) {
+      const remote = await client.read(id).catch(() => null);
+      if (remote) {
+        assertSameProfile(remote);
+
+        // A device joining an existing sync before it has been used has
+        // nothing worth keeping, so it adopts the remote outright. Merging
+        // instead would pair its untouched starting list against the real one
+        // and leave every habit sitting there twice.
+        if (isPristine(store.getState())) {
+          applying = true;
+          store.replaceState(remote);
+          applying = false;
+        }
+      }
     }
 
     writeConfig({ token, gistId: id, lastSyncedAt: null });
