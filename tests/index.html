@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Habit Tracker — tests</title>
+  <link rel="stylesheet" href="../css/tokens.css">
+  <style>
+    body { padding: 1.5rem; max-width: 780px; margin: 0 auto; }
+    h1 { font-size: 1.25rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; }
+    .tally { margin: 1rem 0 1.5rem; font-size: 1.5rem; font-weight: 600; }
+    .tally[data-ok='true'] { color: #3f7d5a; }
+    .tally[data-ok='false'] { color: var(--danger); }
+    h2 { font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase;
+         color: var(--ink-faint); margin: 1.5rem 0 0.5rem; }
+    ul { list-style: none; margin: 0; padding: 0; }
+    li { padding: 0.3rem 0; border-bottom: 1px solid var(--rule); font-size: 0.875rem; }
+    li[data-pass='false'] { color: var(--danger); }
+    .mark { display: inline-block; width: 1.4em; font-weight: 700; }
+    pre { margin: 0.35rem 0 0 1.4em; font-size: 0.75rem; color: var(--ink-soft);
+          white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Habit Tracker — tests</h1>
+  <p class="tally" id="tally">running…</p>
+  <div id="results"></div>
+  <script type="module" src="./run.js"></script>
+</body>
+</html>
