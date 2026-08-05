@@ -94,7 +94,11 @@ export function createSync({ store, profileId, onStatus }) {
       // Nothing of ours to contribute. Pushing anyway was the whole problem:
       // two devices opening the app each sent an identical copy and collided
       // with each other for no reason.
-      if (!config.pending) return;
+      //
+      // Only an explicit false skips the write: a device upgrading from before
+      // this flag existed has no idea what it still owes the server, so it
+      // pushes once rather than sitting on changes forever.
+      if (config.pending === false) return;
 
       try {
         await client.write(config.gistId, store.getState(), profileId);
